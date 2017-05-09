@@ -1,5 +1,14 @@
 $(function(){
 
+// Universal script to capture impressions and clicks
+// already has GA addPromos appended to capture the CTR and Revenue
+
+// INSTRUCTIONS
+// you will currently need to update 4 areas ( we are working on centralizing these )
+// the first area is the _customBindings__ below
+// the 2nd, 3rd and 4th have annotations of UPDATE ATTRIBUTES with a number in front. ( ex: 1. UPDATE ATTRIBUTES )
+// follow instructions for each section and you should be good to go
+
 	/* IMPRESSION TRACKING */
 	// stage placeholder variables for impression tracking
 	__customBindings__ = {
@@ -50,6 +59,8 @@ $(function(){
 			window[__get__.uniqueID+'increment'].push(impression_count); // push the increment to stage for the banner impression impression_count
 			
 			// 1. ------ UPDATE ATTRIBUTES ------ //
+			// these are the attributes for the primary element
+			// we want to capture this to store for later extraction
 			var link = $(this).attr("href");
 			var img = $(this).css('background-image').replace('url("',"").replace('")',"");
 			// ------ END UPDATE ATTRIBUTES ------ //
@@ -76,6 +87,8 @@ $(function(){
 			}
 
 			// 2. ------ UPDATE ATTRIBUTES ------ //
+			// any attr that will distinguish all elements from each other
+			// the href is usually the best use case
 			newbanner = $(__get__.newElement).attr("href"); // visible banner goes here [UPDATE]
 			// ------ END UPDATE ATTRIBUTES ------ //
 
@@ -116,6 +129,8 @@ $(function(){
 		$(__get__.primaryElement).click(function(){ // banner element goes here [UPDATE] 
 
 			// 3. ------ UPDATE ATTRIBUTES ------ //
+			// this is usually the same as the 1st attributes
+			// we are just capturing the primary element info
 			var link = $(this).attr("href");
 			var img = $(this).css('background-image').replace('url("',"").replace('")',"");
 			// ------ END UPDATE ATTRIBUTES ------ //
