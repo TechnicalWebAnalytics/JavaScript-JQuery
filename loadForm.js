@@ -14,9 +14,9 @@ $(function(){
 var loadform_uniqueID = Math.floor(Math.random()*100000);
 
 /* ------- Dynamic Dependencies | EDIT ------- */
-var clickElement   = $('.tp-caption'); // clicked to trigger the form submit
-var successElement = $('.tp-caption'); // that displays success message
-function additionalCode(){dataLayer.push({'event':'example'})}; // message you want to push to the dataLayer
+var clickElement   = $('.your-click-element'); // clicked to trigger the form submit
+var successElement = $('.your-success-element'); // that displays success message
+function additionalCode(){ dataLayer.push({'event':'example'}) }; // message you want to push to the dataLayer
 var debug          = true; // if true will display console messages
 
 /* ------- Build | DO NOT EDIT ------- */
