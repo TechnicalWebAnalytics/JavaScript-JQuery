@@ -1,0 +1,40 @@
+<script type="text/javascript">
+// load search query script
+var QueryString=function(){for(var a={},b=window.location.search.substring(1),c=b.split("&"),d=0;d<c.length;d++){var e=c[d].split("=");if(void 0===a[e[0]])a[e[0]]=e[1];else if("string"==typeof a[e[0]]){var f=[a[e[0]],e[1]];a[e[0]]=f}else a[e[0]].push(e[1])}return a}();
+
+var querydetect = QueryString.yourquery; // replace "yourquery" with the correct query string
+var query = 'yourquery'; // same as above
+var domain = 'https://www.yourdomain.com'; // replace with the correct domain name
+
+if(querydetect == undefined){ 
+	__schema__searchquery = ''; 
+}else{
+	__schema__searchquery = querydetect;  
+}
+
+(function(){
+  var data = {
+
+  "@context": "http://schema.org",
+
+  "@type": "WebSite",
+
+  "url": domain+"/",
+
+  "potentialAction": {
+
+  "@type": "SearchAction",
+
+  "target": domain+"?"+query+"="+__schema__searchquery,
+
+  "query-input": "required name="+__schema__searchquery
+
+  }
+}
+
+var script = document.createElement('script');
+script.type = "application/ld+json";
+script.innerHTML = JSON.stringify(data)
+document.getElementsByTagName('head')[0].appendChild(script);
+})(document);
+</script>
