@@ -1,14 +1,14 @@
 <script>
 /*
-=================================
-| SEGMENT ARCHITECTURE: SHOPIFY |
----------------------------------
+===================================
+| DATALAYER ARCHITECTURE: SHOPIFY |
+-----------------------------------
 
 EXTERNAL DEPENDENCIES:
 * jQuery
 
-Segment Architecture: Shopify v1.1
-COPYRIGHT 2017
+DataLayer Architecture: Shopify v2.0
+COPYRIGHT 2016
 LICENSES: MIT ( https://opensource.org/licenses/MIT )
 AUTHORS: mechellewarneke@gmail.com | mechelle@bvaccel.com
 */
@@ -311,6 +311,7 @@ function backoff(test, callback, delay){
 | LOAD UTILITY FUNCTIONS |
 --------------------------
 Apply any reusable functions here
+invoke 'purr' to get complete list of utilities in console
 */
 
 function loadUtilities(){
