@@ -20,9 +20,10 @@ AUTHORS: mechellewarneke@gmail.com | mechelle@bvaccel.com
 */
 
 function config(){
-	__meow__  = {
+	__meow__segment  = {
 		dynamicCart : true, // if cart is dynamic (meaning no refresh on cart add) set to true
 		debug       : true, // if true, console messages will be displayed
+		debugType	: 'object', // choose how console logs should be displayed |
 		cart        : null,
 		wishlist    : null,
 		removeCart  : null
@@ -35,7 +36,9 @@ function config(){
 		removeCartTrigger : ['[href*="/cart/change"]'],
 		searchTermQuery   : [purr.getURLParams('q')],
 		searchPage        : ['search'],
-		applyCoupon       : ['.order-summary__section--discount button'],
+		applyCoupon       : ['.section--reductions .btn--default'],
+		couponCode		: ['.applied-reduction-code__information'],
+		couponDiscount	: ['[data-reduction-form]'],
 		checkoutNext      : ['.step__footer__continue-btn'],
 		removeFromCart    : ['.icon-minus']
 	}
@@ -49,18 +52,18 @@ function config(){
 
 /* Products Searched */
 function productSearched(){
-	var searchPage = new RegExp(__meow__.searchPage, "g");
+	var searchPage = new RegExp(__meow__segment.searchPage, "g");
 	if(document.location.pathname.match(searchPage)){
-		analytics.track('Products Searched', {
-			query: __meow__.searchTermQuery
-		});
+		var output = { query: __meow__segment.searchTermQuery };
+		purr.debug(arguments.callee.name,output);
+		analytics.track('Products Searched', output);
 	}
 }
 
 /* Product List Viewed */
 function productListViewed(){
 	{% if template contains 'collection' %}
-	analytics.track('Product List Viewed', {
+	var output = {
 		list_id  : "{{collection.title}}",
 		category : "{{collection.title}}",
 		products : [
@@ -73,14 +76,16 @@ function productListViewed(){
 			category   : "{{product.type}}",
 		},
 		{% endfor %}]
-	});
+	};
+	purr.debug(arguments.callee.name,output);
+	analytics.track('Product List Viewed', output);
 	{% endif %}
 }
 
 /* Product Viewed */
 function productViewed(){
 	{% if template contains 'product' %}
-	analytics.track('Product Viewed', {
+	var output = {
 		product_id : '{{product.id}}',
 		sku        : '{{product.selected_or_first_available_variant.sku}}',
 		variant    : '{{product.selected_or_first_available_variant.variant}}',
@@ -89,15 +94,17 @@ function productViewed(){
 		brand      : '{{shop.name}}',
 		price      : '{{product.price | money_without_currency | remove: ","}}',
 		currency   : '{{shop.currency}}',
-	});
+	};
+	purr.debug(arguments.callee.name,output);
+	analytics.track('Product Viewed', output);
 	{% endif %}
 }
 
 /* Product Added */
 function productAdded(){
 	{% if template contains 'product' %}
-	$(__meow__.cartTriggers).on("click", function(){
-		analytics.track('Product Added', {
+	$(__meow__segment.cartTriggers).on("click", function(){
+		var output = {
 			product_id : '{{product.id}}',
 			sku        : '{{product.selected_or_first_available_variant.sku}}',
 			variant    : '{{product.selected_or_first_available_variant.variant}}',
@@ -106,8 +113,10 @@ function productAdded(){
 			brand      : '{{shop.name}}',
 			price      : '{{product.price | money_without_currency | remove: ","}}',
 			currency   : '{{shop.currency}}',
-			quantity   : $(__meow__).val();
-		});
+			quantity   : $(__meow__segment).val()
+		};
+		purr.debug(arguments.callee.name,output);
+		analytics.track('Product Added', output);
 	});
 	{% endif %}
 }
@@ -116,37 +125,61 @@ function productAdded(){
 function productRemoved(){
 	function stageRemove(){
 		purr.getProductArrayData('/cart.js').then(function(response){
-			__meow__stageRemove = __meow__.data.products
+			Cookies.get('segmentCart');
+			__meow__segmentstageRemove = __meow__segment.data.products;
+			Cookies.set('segmentCart',__meow__segmentstageRemove);
 		});
 	}
-	stageRemove();
-	setTimeout(function(){
-		$(document).on("click",__meow__.removeCartTrigger,function(){
-			console.log('click');
+	function checkStageRemove(){
+		Cookies.get('segmentCart');
+		purr.getProductArrayData('/cart.js').then(function(response){
+			__meow__checkStageRemove = __meow__segment.data.products;
+		});
+	}
+	function removeProduct(){
+		fireRemoveProduct = 0;
+		if(JSON.parse(Cookies.get('segmentCart')).length != __meow__checkStageRemove.length && fireRemoveProduct == 0){
+			Cookies.get('segmentCart');
 			purr.getProductArrayData('/cart.js').then(function(response){
-				x = purr.removeFromCart(__meow__stageRemove,__meow__.data.products);
-				if(x.length > 0){
-					analytics.track('Product Removed', x);
+				fireRemoveProduct = 1;
+				removeoutput = purr.removeFromCart(JSON.parse(Cookies.get('segmentCart')),__meow__segment.data.products);
+				if(removeoutput.length > 0){
+					purr.debug('productRemoved',removeoutput);
+					analytics.track('Product Removed', removeoutput);
+					stageRemove();
+					fireRemoveProduct = 0;
 				}
 			});
-		});
-	},1000);
+		}
+	}
+	setInterval(function(){
+		checkStageRemove();
+		if(Cookies.get('segmentCart') == undefined){
+			stageRemove();
+		}else if(typeof(__meow__checkStageRemove) !== 'undefined'){
+			removeProduct();
+		}
+	},1500);
 }
 
 /* Cart Viewed */
 function cartViewed(){
-	$(__meow__.viewCart).on("click",function(){
+	$(__meow__segment.viewCart).on("click",function(){
 		purr.getProductArrayData('/cart.js').then(function(response){
-			analytics.track('Cart Viewed', {
-				products: __meow__.data.products
-			});
+			var output = {
+				products: __meow__segment.data.products
+			};
+			purr.debug('cartViewed',output);
+			analytics.track('Cart Viewed', output);
 		});
 	});
 	if(document.location.pathname.match(/.*cart.*/g)){
 		purr.getProductArrayData('/cart.js').then(function(response){
-			analytics.track('Cart Viewed', {
-				products: __meow__.data.products
-			});
+			var output = {
+				products: __meow__segment.data.products
+			};
+			purr.debug('cartViewed',output);
+			analytics.track('Cart Viewed', output);
 		});
 	}
 }
@@ -155,8 +188,8 @@ function cartViewed(){
 function checkoutStarted(){
 	if(Shopify.Checkout){
 		if (Shopify.Checkout.step === 'contact_information'){
-			purr.getProductArrayData('/cart.js', function(){
-				analytics.track('Checkout Started', {
+			purr.getProductArrayData('/cart.js').then(function(){
+				var output = {
 					order_id    : '{{checkout.order_number}}',
 					affiliation : '{{shop.name}}',
 					value       : '{{checkout.total_price |  money_without_currency| remove: ","}}',
@@ -168,8 +201,10 @@ function checkoutStarted(){
 					coupon      :  '{{discount.code}}',
 					{% endfor %}
 					currency    : '{{shop.currency}}',
-					products    : __meow__.data.products
-				});
+					products    : __meow__segment.data.products
+				};
+				purr.debug('checkoutStarted',output);
+				analytics.track('Checkout Started', output);
 			});
 		}
 	}
@@ -179,26 +214,34 @@ function checkoutStarted(){
 function checkout(){
 	if(Shopify.Checkout){
 		function stepcomplete(step){
-			$(__meow__.checkoutNext).on('click',function(){
-				analytics.track('Checkout Step Completed', {
+			$(__meow__segment.checkoutNext).on('click',function(){
+				var output = {
 					step: step
-				});
+				};
+				purr.debug('Checkout Step Completed',output);
+				analytics.track('Checkout Step Completed', output);
 			})
 		}
 		if (Shopify.Checkout.step === 'contact_information'){
-			analytics.track('Checkout Step Viewed', {
+			var output = {
 				step: 1
-			});
+			};
+			purr.debug(arguments.callee.name,output);
+			analytics.track('Checkout Step Viewed', output);
 			stepcomplete('1');
 		}else if (Shopify.Checkout.step === 'shipping_method'){
-			analytics.track('Checkout Step Viewed', {
+			var output = {
 				step: 2
-			});
+			};
+			purr.debug(arguments.callee.name,output);
+			analytics.track('Checkout Step Viewed', output);
 			stepcomplete('2');
 		}else if( Shopify.Checkout.step === "payment_method" ){
-			analytics.track('Checkout Step Viewed', {
+			var output = {
 				step: 3
-			});
+			};
+			purr.debug(arguments.callee.name,output);
+			analytics.track('Checkout Step Viewed', output);
 			stepcomplete('3');
 		}
 	}
@@ -208,24 +251,47 @@ function checkout(){
 
 /* Coupon Applied */
 function couponApplied(){
-	$(document).on("click",__meow__.applyCoupon,function(){ 
-		event.stopPropagation();
-		var check = setInterval(function(){
-			{% for discount in checkout.discounts %}
-			if('{{discount.title}}'){
-				clearInterval(check);
-				analytics.track('Coupon Applied', {
-					order_id    : '{{checkout.order_number}}',
-					coupon_id   : '{{discount.id}}',
-					coupon_name : '{{discount.title}}',
-					discount    : '{{discount.amount | money_without_currency}}'
-				});
-			}
-			{% endfor %}
-		}, 1000);
-		check;
-		setTimeout(function( ) { clearInterval( check ); }, 50000);
-	});
+	// check if promo is already applied on Payment method page
+	if( Shopify.Checkout && Shopify.Checkout.step === "payment_method" ){
+		{% for discount in checkout.discounts %}
+		console.log('initial');
+		var output = {
+			order_id    : '{{checkout.order_number}}',
+			coupon_name : '{{discount.title}}',
+			discount    : '{{discount.amount | money_without_currency | remove: ","}}'
+		};
+		if('{{discount.title}}'){
+			purr.debug(arguments.callee.name,output);
+			analytics.track('Coupon Applied', output);
+		}
+		{% endfor %}
+	}
+	// detect if a promo code is entered
+	firecouponApplied = 0;
+	if(firecouponApplied != 1){
+		$(document).on("click",__meow__segment.applyCoupon,function(){ 
+			firecouponApplied = 1;
+			var check = setInterval(function(){
+				console.log('interval');
+
+				var couponName = $(__meow__segment.couponCode).html();
+				var couponPrice = parseFloat($(__meow__segment.couponDiscount).text().split('$').pop().replace(/\,/gi,"")).toFixed(2); 
+				if(couponName && $('.btn-loading').length == 0){
+					console.log('success');
+					clearInterval(check);
+					var output = {
+						order_id    : '{{checkout.order_number}}',
+						coupon_name : couponName,
+						discount    : couponPrice
+					};
+					purr.debug(arguments.callee.name,output);
+					analytics.track('Coupon Applied', output);
+				}
+			}, 1000);
+			check;
+			setTimeout(function( ) { clearInterval( check ); }, 50000);
+		});
+	};
 }
 
 /* Order Cancelled - customer has to call to cancel - no cancellation page */
@@ -235,7 +301,7 @@ function couponApplied(){
 function orderCompleted(){
 	if(Shopify.Checkout){
 		if(Shopify.Checkout.page == "thank_you" || document.location.pathname.match(/.*order.*/g)){
-			analytics.track('Order Completed', {
+			var output = {
 				order_id    : '{{checkout.order_number}}',
 				affiliation : "{{shop.name}}",
 				total       : '{{checkout.total_price |  money_without_currency| remove: ","}}',
@@ -257,7 +323,9 @@ function orderCompleted(){
 					category   : "{{line_item.product.type}}",
 				},
 				{% endfor %}]
-			});
+			};
+			purr.debug(arguments.callee.name,output);
+			analytics.track('Order Completed', output);
 		}
 	}
 }
@@ -315,6 +383,21 @@ invoke 'purr' to get complete list of utilities in console
 */
 
 function loadUtilities(){
+
+	this.debug = function(funcname,output){
+		if(__meow__segment.debug == true ){
+			if(__meow__segment.debugType === 'object'){
+				console.log("Segment "+funcname, output); 
+			}else if(__meow__segment.debugType === 'text'){
+				console.log("Segment "+funcname+" :"+JSON.stringify(output, null, " "));
+			}else{
+				console.log("Segment "+funcname, output); 
+				console.log("Segment "+funcname+" :"+JSON.stringify(output, null, " "));
+			}
+		}
+	}
+
+
 	this.getURLParams = function(name, url){
 		if (!url) url = window.location.href;
 		name = name.replace(/[\[\]]/g, "\\$&");
@@ -328,7 +411,7 @@ function loadUtilities(){
 	this.getProductData = function(url){
 		return jQuery.getJSON(url, function (response) {
 			var data = response.product;
-			__meow__.data = {
+			__meow__segment.data = {
 				product_id : data.id,
 				sku        : data.variants[0].sku,
 				category   : data.product_type,
@@ -343,7 +426,7 @@ function loadUtilities(){
 	this.getProductArrayData = function(url,callback){
 		return jQuery.getJSON(url).then(function (response) {
 			data = response;
-			__meow__.data  = {
+			__meow__segment.data  = {
 				'products': data.items.map(function (line_item) {
 					return {
 						product_id : line_item.id,
@@ -357,7 +440,7 @@ function loadUtilities(){
 				})        
 			};
 		})
-		return __meow__.data;
+		return __meow__segment.data;
 	}
 
 	this.removeFromCart = function(originalCart,newCart){
@@ -384,6 +467,8 @@ function loadUtilities(){
 		for(var i=originalCart.length-1;i>=0;i--){var x=parseFloat(originalCart[i].variant);cartIDs.push(x)}for(var i=newCart.length-1;i>=0;i--){var x=parseFloat(newCart[i].variant);removeIDs.push(x)}function arr_diff(b,c){var a=[],diff=[];for(var i=0;i<b.length;i++){a[b[i]]=true}for(var i=0;i<c.length;i++){if(a[c[i]]){delete a[c[i]]}else{a[c[i]]=true}}for(var k in a){diff.push(k)}return diff};var x=arr_diff(cartIDs,removeIDs)[0];for(var i=originalCart.length-1;i>=0;i--){if(originalCart[i].variant==x){removeCart.push(originalCart[i])}}
 			return removeCart;
 	}
+
+	!function(e){var n=!1;if("function"==typeof define&&define.amd&&(define(e),n=!0),"object"==typeof exports&&(module.exports=e(),n=!0),!n){var o=window.Cookies,t=window.Cookies=e();t.noConflict=function(){return window.Cookies=o,t}}}(function(){function e(){for(var e=0,n={};e<arguments.length;e++){var o=arguments[e];for(var t in o)n[t]=o[t]}return n}function n(o){function t(n,r,i){var c;if("undefined"!=typeof document){if(arguments.length>1){if("number"==typeof(i=e({path:"/"},t.defaults,i)).expires){var a=new Date;a.setMilliseconds(a.getMilliseconds()+864e5*i.expires),i.expires=a}i.expires=i.expires?i.expires.toUTCString():"";try{c=JSON.stringify(r),/^[\{\[]/.test(c)&&(r=c)}catch(e){}r=o.write?o.write(r,n):encodeURIComponent(String(r)).replace(/%(23|24|26|2B|3A|3C|3E|3D|2F|3F|40|5B|5D|5E|60|7B|7D|7C)/g,decodeURIComponent),n=(n=(n=encodeURIComponent(String(n))).replace(/%(23|24|26|2B|5E|60|7C)/g,decodeURIComponent)).replace(/[\(\)]/g,escape);var f="";for(var s in i)i[s]&&(f+="; "+s,!0!==i[s]&&(f+="="+i[s]));return document.cookie=n+"="+r+f}n||(c={});for(var p=document.cookie?document.cookie.split("; "):[],d=/(%[0-9A-Z]{2})+/g,u=0;u<p.length;u++){var l=p[u].split("="),C=l.slice(1).join("=");'"'===C.charAt(0)&&(C=C.slice(1,-1));try{var g=l[0].replace(d,decodeURIComponent);if(C=o.read?o.read(C,g):o(C,g)||C.replace(d,decodeURIComponent),this.json)try{C=JSON.parse(C)}catch(e){}if(n===g){c=C;break}n||(c[g]=C)}catch(e){}}return c}}return t.set=t,t.get=function(e){return t.call(t,e)},t.getJSON=function(){return t.apply({json:!0},[].slice.call(arguments))},t.defaults={},t.remove=function(n,o){t(n,"",e(o,{expires:-1}))},t.withConverter=n,t}return n(function(){})});
 }
 
 /* 
@@ -398,7 +483,7 @@ function stichConfig(){
 
 	// stitch bindings
 	objectArray = bindings;
-	outputObject = __meow__;
+	outputObject = __meow__segment;
 
 	function applyBindings(objectArray, outputObject){
 		for (var x in objectArray){  
@@ -417,7 +502,7 @@ function stichConfig(){
 		}
 	}
 
-	applyBindings(bindings, __meow__);
+	applyBindings(bindings, __meow__segment);
 }
 
 /*
@@ -428,12 +513,13 @@ function stichConfig(){
 
 /* SETUP ARCHITECTURE */
 function setup(){
-	console.log('Segment Analytcs Loaded');
+	console.log('Segment Analytics Loaded');
 	purr = (new loadUtilities());
 	stichConfig();
 	productSearched();
 	productListViewed();
 	productViewed();
+	checkoutStarted()
 	checkout();
 	orderCompleted();
 
