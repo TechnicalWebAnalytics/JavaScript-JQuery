@@ -154,7 +154,7 @@ function productRemoved(){
 	}
 	setInterval(function(){
 		checkStageRemove();
-		if(Cookies.get('segmentCart') == undefined){
+		if(Cookies.get('segmentCart') == undefined || Cookies.get('segmentCart') == "[]"){
 			stageRemove();
 		}else if(typeof(__meow__checkStageRemove) !== 'undefined'){
 			removeProduct();
@@ -254,7 +254,6 @@ function couponApplied(){
 	// check if promo is already applied on Payment method page
 	if( Shopify.Checkout && Shopify.Checkout.step === "payment_method" ){
 		{% for discount in checkout.discounts %}
-		console.log('initial');
 		var output = {
 			order_id    : '{{checkout.order_number}}',
 			coupon_name : '{{discount.title}}',
@@ -272,12 +271,9 @@ function couponApplied(){
 		$(document).on("click",__meow__segment.applyCoupon,function(){ 
 			firecouponApplied = 1;
 			var check = setInterval(function(){
-				console.log('interval');
-
 				var couponName = $(__meow__segment.couponCode).html();
 				var couponPrice = parseFloat($(__meow__segment.couponDiscount).text().split('$').pop().replace(/\,/gi,"")).toFixed(2); 
 				if(couponName && $('.btn-loading').length == 0){
-					console.log('success');
 					clearInterval(check);
 					var output = {
 						order_id    : '{{checkout.order_number}}',
