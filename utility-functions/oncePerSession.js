@@ -1,7 +1,10 @@
 /**
-Once per Session Events
-Only fires events once per user session
-A session cookie is set for the foundation of the logic
+====================
+| Once Per Session |
+--------------------
+* Once per Session Events
+* Only fires events once per user session
+* A session cookie is set for the foundation of the logic
 */
 
 /*
@@ -27,23 +30,27 @@ function loadCookieLibrary(){
 function finalize(){
 	loadSessionEvents();
 	purr_sessionEvents = (new loadSessionEvents());
-	console.log('purr_sessionEvents',purr_sessionEvents);
+	// console.log('purr_sessionEvents: purr_sessionEvents.functions();');
 }
 
 /*
 ==================
 | Session Events |
 ------------------
+* You will need to use your own event logic. 
+* This is where you will add this code. 
 */
 
-/*
-Add to Cart
-*/
 function loadSessionEvents(){
-	// identify if cookie exists
+	// list all session event functions
+	this.functions = function(){
+		console.log('purr_sessionEvents',Object.getOwnPropertyDescriptors(purr_sessionEvents));
+	}
+
+	// add to cart
 	this.sessionAddtoCart = function(additionalCode){
 		if(Cookies.get('sessionAddtoCart') === undefined){
-			additionalCode;
+			additionalCode();
 			Cookies.set('sessionAddtoCart', '1');
 		};
 	};
@@ -69,5 +76,5 @@ function ts(){
 	console.log(timeStamp);
 }
 
-purr_sessionEvents.sessionAddtoCart(ts());
+purr_sessionEvents.sessionAddtoCart(ts);
 */
