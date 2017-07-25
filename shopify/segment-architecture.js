@@ -23,7 +23,7 @@ function config(){
 	__meow__segment  = {
 		dynamicCart : true, // if cart is dynamic (meaning no refresh on cart add) set to true
 		debug       : true, // if true, console messages will be displayed
-		debugType	: 'object', // choose how console logs should be displayed |
+		debugType	: 'object', // choose how console logs should be displayed : object | text | both
 		cart        : null,
 		wishlist    : null,
 		removeCart  : null

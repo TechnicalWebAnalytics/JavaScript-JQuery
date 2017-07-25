@@ -1,9 +1,9 @@
 (function(){
 /**
-====================
-| Once Per Session |
---------------------
-* Once per Session Events
+===========================
+| New vs Returning Cookie |
+---------------------------
+* Establishes a new vs returning cookie based on purchases
 * Only fires events once per user session
 * A session cookie is set for the foundation of the logic
 */
@@ -17,7 +17,7 @@
 window.purr = window.purr || {}; // load global object variable
 
 // Check for Javascript Cookie Library
-function loadOncePerSession(){
+function loadNewVsReturning(){
 	if(typeof Cookies === "undefined"){
 		loadCookieLibrary();
 		finalize();
@@ -32,24 +32,31 @@ function loadCookieLibrary(){
 
 function finalize(){
 	events();
-	purr.sessions = (new events());
-	// console.log('purr: purr.functions();');
+	purr.newvsreturning = (new events());
+	// console.log('purr_newvsreturning: purr_newvsreturning.functions();');
 }
 
 /*
-==================
-| Session Events |
-------------------
+================
+| Cookie Event |
+----------------
 * You will need to use your own event logic. 
 * This is where you will add this code. 
 */
 
 function events(){
-	// add to cart
-	this.addToCart = function(additionalCode){
-		if(Cookies.get('addToCart') === undefined){
-			additionalCode();
-			Cookies.set('addToCart', '1');
+	this.check = function(
+		newCustomerInput, // optional: any conditionals to detect new users | pass as a function
+		returningCustomerInput, // optional: any conditionals to detect returning users | pass as a function
+		newCustomer_additionalCode, // code to fire on new user
+		returningCustomer_additionalCode){ // code to fire on returning user
+		if(Cookies.get('newVreturning') === 'returning' || returningCustomerInput() ){
+			Cookies.set('newVreturning', 'returning', { expires: 36500 });
+				returningCustomer_additionalCode();
+
+		}else	if(Cookies.get('newVreturning') !== 'returning' || newCustomerInput() ){
+			Cookies.set('newVreturning', 'returning', { expires: 36500 });
+				newCustomer_additionalCode();
 		};
 	};
 };
@@ -60,20 +67,6 @@ function events(){
 -----------------
 */
 
-loadOncePerSession();
+loadNewVsReturning();
 
-/*
-============
-| Examples |
-------------
-*/
-
-/* Add to Cart
-function ts(){
-	var timeStamp = Math.floor(Date.now() / 1000); 
-	console.log(timeStamp);
-}
-
-purr.sessions.addToCart(ts);
-*/
 })();

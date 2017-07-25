@@ -1,3 +1,4 @@
+<script>
 /*
 ===================================
 | DATALAYER ARCHITECTURE: SHOPIFY |
@@ -21,11 +22,13 @@ AUTHORS: mechellewarneke@gmail.com | mechelle@bvaccel.com
 function config(){
 
 	__meow__dataLayer = {
-		dynamicCart: true,  // if cart is dynamic (meaning no refresh on cart add) set to true
-		debug: true, // if true, console messages will be displayed
-		cart: null,
-		wishlist: null,
-		removeCart: null
+		dynamicCart     : true,  // if cart is dynamic (meaning no refresh on cart add) set to true
+		debug           : true, // if true, console messages will be displayed
+		debugType       : 'object', // choose how console logs should be displayed : object | text | both
+		googleAnalytics : false, // will check for GA before complete load
+		cart            : null,
+		wishlist        : null,
+		removeCart      : null
 	};
 
 	bindings = {
@@ -60,7 +63,6 @@ function beginDataLayer(){
 		'event'           : 'Begin DataLayer'
 	}	
 	__meow__dataLayer.purr.debug(arguments.callee.name,output);
-	window.dataLayer = window.dataLayer || [];
 	dataLayer.push(output);
 }
 
@@ -71,6 +73,40 @@ function landingPage(){
 	} else {
 		var landingPage = false;
 		Cookies.set('landingPage', 'refresh', { expires: .5 });
+	}
+
+	var output = { landingPage: Cookies.get('landingPage') };
+
+	if ( output.landingPage === 'landed') {
+		dataLayer.push({
+			'pageType': 'Landing',
+			'event': 'Landing'
+		});
+	}
+
+	__meow__dataLayer.purr.debug('landingPage',output);
+}
+
+function logState(){
+	{% if customer %}
+	var isLoggedIn = true;
+	{% else %}
+	var isLoggedIn = false;
+	{% endif %}
+	if (!isLoggedIn) {
+		Cookies.set('logState', 'loggedOut');
+	} else {
+		if (Cookies.get('logState') === 'loggedOut' || Cookies.get('logState') === undefined) {
+			Cookies.set('logState', 'firstLog');
+		} else if ($.cookie('logState') === 'firstLog') {
+			Cookies.set('logState', 'refresh');
+		}
+	}
+
+	if (Cookies.get('logState') === 'firstLog') {
+		var firstLog = true;
+	} else {
+		var firstLog = false;
 	}
 }
 
@@ -91,7 +127,11 @@ function jQueryReady(){
 }
 
 function googleAnalyticsReady(){
-	return typeof window.ga !== 'undefined';
+	if(__meow__dataLayer.googleAnalytics == true){
+		return typeof window.ga !== 'undefined';
+	}else{
+		return true;
+	}
 }
 
 /* Check if libraries are loaded */
@@ -250,6 +290,16 @@ function stichConfig(){
 }
 
 /*
+========================
+| FUNCTION INFORMATION |
+------------------------
+*/
+
+function loadTime(){
+	var timerStart = Date.now();
+}
+
+/*
 =================
 | FINALIZE LOAD |
 -----------------
@@ -257,27 +307,17 @@ function stichConfig(){
 
 /* SETUP ARCHITECTURE */
 function setup(){
-	console.log('Segment Analytics Loaded');
+	console.log('GTM Data Layer Loaded');
 	__meow__dataLayer.purr = (new loadUtilities());
-	stichConfig();
-	productSearched();
-	productListViewed();
-	productViewed();
-	checkoutStarted()
-	checkout();
-	orderCompleted();
-
-	$(document).ready(function(){
-		productAdded();
-		cartViewed();
-		couponApplied();
-		productRemoved();
-	});
+	landingPage();
 }
 
 /* LOAD ARCHITECTURE */
 function init(){
+	stichConfig();
+	window.dataLayer = window.dataLayer || [];
 	backoff(isReady, setup);
 }
 
 init();
+</script>
