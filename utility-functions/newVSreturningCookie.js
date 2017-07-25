@@ -6,10 +6,10 @@
 * Establishes a new vs returning cookie based on purchases
 * Call function using purr.newvsreturning.check(
 * 		newCustomerInput, // optional: any conditionals to detect new users | pass as a function
-		returningCustomerInput, // optional: any conditionals to detect returning users | pass as a function
-		newCustomer_additionalCode, // code to fire on new user
-		returningCustomer_additionalCode){ // code to fire on returning user
-		);
+*		returningCustomerInput, // optional: any conditionals to detect returning users | pass as a function
+*		newCustomer_additionalCode, // code to fire on new user
+*		returningCustomer_additionalCode){ // code to fire on returning user
+*		);
 */
 
 /*
