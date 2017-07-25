@@ -4,8 +4,12 @@
 | New vs Returning Cookie |
 ---------------------------
 * Establishes a new vs returning cookie based on purchases
-* Only fires events once per user session
-* A session cookie is set for the foundation of the logic
+* Call function using purr.newvsreturning.check(
+* 		newCustomerInput, // optional: any conditionals to detect new users | pass as a function
+		returningCustomerInput, // optional: any conditionals to detect returning users | pass as a function
+		newCustomer_additionalCode, // code to fire on new user
+		returningCustomer_additionalCode){ // code to fire on returning user
+		);
 */
 
 /*
