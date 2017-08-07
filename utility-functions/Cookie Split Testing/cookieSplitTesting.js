@@ -1,4 +1,3 @@
-(function(){
 /**
 ========================
 | Cookie Split Testing |
@@ -7,27 +6,54 @@
 * Integrates rule that only allows set cookies to fire for a respective variant
 * Allows integration of an external conditional
 *
+* VERSION 1.0
+* 
 * To run the script use:
 * purr.splitTesting.run(
-			initialConditional, // apply any initial conditional that may not be included in the standard detection ( is pixel available if not set it )
-			initialCode, // any code that should be included if the initial conditional is true
-			codeIfCookieIsSet, // if cookie is set run this code
-			codeIfCookieIsNotSet, // if cookie is not set run this code
-			cookieSplitName, // name of the split cookie
-			cookieSplitValue // name of the split cookie value
-			);
-*/
+	initialConditional, // apply any initial conditional that may not be included in the standard detection is pixel available if not set it )
+	initialCode, // any code that should be included if the initial conditional is true
+	codeIfCookieIsSet, // if cookie is set run this code
+	codeIfCookieIsNotSet, // if cookie is not set run this code
+	cookieSplitName, // name of the split cookie
+	cookieSplitValue, // name of the split cookie value
+	variation // which variation to assign [ 1, 2 ]
+	);
+	*/
 
 /*
-=============
-| Load Vars |
--------------
+================
+| Setup Config |
+----------------
 */
+function config(){
+	setup = {
+		// config variables
+		debug : true,
 
-var finalizeLoadCode = function(){ 
-	// any initialization code can go here
-	dataLayer.push({'event': 'Split Test Cookie Script Loaded'}); 
-};
+		// any initialization code can go here
+		scriptInitialized : function(){ 
+			dataLayer = window.dataLayer || [];
+			dataLayer.push({'event': 'Split Test Cookie Script Loaded'});
+			return 'done';
+		},
+
+		// run in debug ( for output data )
+		registerDebugData : function(output){
+			/* OUTPUT OBJECTS ( output )
+			* ex: output.Status
+			* Status
+			* Cookie
+			* Value
+			* Variation
+			* VariationMatch
+			*/
+			var dimensionValue = output.Variation;
+			ga('set', 'dimension20', dimensionValue);
+			ga('send','event','Cookie Split Test - Trial Run', output.Status, output.Variation);
+		}
+	};
+	return setup;
+}
 
 /*
 ==================
@@ -36,7 +62,10 @@ var finalizeLoadCode = function(){
 */
 
 window.purr = window.purr || {}; // load global object variable
+window.purr.splitTesting = window.purr.splitTesting || {}; // load global function
+window.purr.debugLog = window.purr.debugLog || []; // load global debug log
 
+(function(){
 // Check for Javascript Cookie Library
 function loadCookieSplitTest(){
 	if(typeof Cookies === "undefined"){
@@ -52,9 +81,10 @@ function loadCookieLibrary(){
 };
 
 function finalize(){
-	events();
 	purr.splitTesting = (new events());
-	finalizeLoadCode();
+	purr.splitTesting.utilities = (new utilities());
+	purr.splitTesting.config = config();
+	purr.splitTesting.config.scriptInitialized();
 }
 
 /*
@@ -62,6 +92,8 @@ function finalize(){
 | Load Utilities |
 ------------------
 */
+
+var variationSplit = (Math.random() > 0.5 == true) ? "1" : "2";
 
 getQueryVariable = function(variable) {
 	var query = window.location.search.substring(1);
@@ -72,13 +104,17 @@ getQueryVariable = function(variable) {
 			return decodeURIComponent(pair[1]);
 		}
 	}
-	console.log('Query variable %s not found', variable);
 }
 
-runVariation = function(numberOfVariations){
-	// < 0.5*2147483647
-	
-}
+function utilities(){
+	this.debug = function(output){
+		if(purr.splitTesting.config.debug === true ){
+			console.log("Cookie Split Testing ", output); 
+		};
+		purr.debugLog.push(output);
+		purr.splitTesting.config.registerDebugData(output);
+	};
+};
 
 /*
 ==================
@@ -89,25 +125,46 @@ runVariation = function(numberOfVariations){
 */
 
 function events(){
-	// add to cart
+
 	this.run = function(
 		initialConditional, // apply any initial conditional that may not be included in the standard detection ( is pixel available if not set it )
 		initialCode, // any code that should be included if the initial conditional is true
 		codeIfCookieIsSet, // if cookie is set run this code
 		codeIfCookieIsNotSet, // if cookie is not set run this code
 		cookieSplitName, // name of the split cookie
-		cookieSplitValue // name of the split cookie value
+		cookieSplitValue, // name of the split cookie value
+		variation // the variation number [ 1, 2 ]
 		){ 
-		var x = cookieSplitName;
-		var y = cookieSplitValue;
+		var z = variation.toString();
+		var x         = cookieSplitName;
+		var y         = cookieSplitValue;
+		function runDebug(){
+			var output = {
+				'Status'		: status,
+				'Cookie'          : x,
+				'Value'           : y,
+				'Variation'       : z,
+				'Variation Match' : variationSplit
+			}	
+			purr.splitTesting.utilities.debug(output);
+		}
 		if(Cookies.get(x) === undefined && initialConditional()){ // if conditional is met
-			intialCode();
+			initialCode();
 			Cookies.set(x, y, { expires: 730 });
-		}else if(Cookies.get(x) === undefined){ // if cookie is not set
-			codeIfCookieIsNotSet();
-			Cookies.set(x, y, { expires: 730 }); // if cookie is set
+			var status = 'UTM Detected';
+			runDebug();
 		}else if(Cookies.get(x) == y){
 			codeIfCookieIsSet();
+			var status = 'Cookie Detected';
+			runDebug();
+		}else if(Cookies.get(x) === undefined && z == variationSplit ){ // if cookie is not set
+			codeIfCookieIsNotSet();
+			Cookies.set(x, y, { expires: 730 }); // if cookie is set
+			var status = 'New Cookie Set';	
+			runDebug();
+			purr.splitTesting.utilities.debug(output);
+		}else{
+			var status = 'Unmatched Variation - No Cookies Set';
 		};
 	};
 
@@ -127,8 +184,9 @@ function events(){
 		function codeIfCookieIsNotSet(){
 			console.log('fireIfCookieNotSet');
 		}
-		var cookieSplitName = 'test1';
+		var cookieSplitName  = 'test1';
 		var cookieSplitValue = 'testresult1';
+		var variation        = 1;
 
 		purr.splitTesting.run(
 			initialConditional, // apply any initial conditional that may not be included in the standard detection ( is pixel available if not set it )
@@ -136,10 +194,12 @@ function events(){
 			codeIfCookieIsSet, // if cookie is set run this code
 			codeIfCookieIsNotSet, // if cookie is not set run this code
 			cookieSplitName, // name of the split cookie
-			cookieSplitValue // name of the split cookie value
+			cookieSplitValue, // name of the split cookie value
+			variation
 			);
 
 		if(reset == true){
+			loadCookieLibrary();
 			Cookies.remove(cookieSplitName);
 		};
 	};
