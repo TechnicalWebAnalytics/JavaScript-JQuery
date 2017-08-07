@@ -162,7 +162,6 @@ function events(){
 			Cookies.set(x, y, { expires: 730 }); // if cookie is set
 			var status = 'New Cookie Set';	
 			runDebug();
-			purr.splitTesting.utilities.debug(output);
 		}else{
 			var status = 'Unmatched Variation - No Cookies Set';
 		};
